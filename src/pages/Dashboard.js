@@ -53,19 +53,22 @@ function Dashboard() {
     }
   }, []);
 
-  useEffect(() => {
+useEffect(() => {
     const guestMode = sessionStorage.getItem("guestMode");
+
     if (guestMode === "true") {
-      setIsGuest(true);
-      loadDemoSecrets();
-      return;
+        setIsGuest(true);
+        loadDemoSecrets();
+        return;
     }
+
     if (!token) {
-      navigate("/login");
-      return;
+        navigate("/login");
+        return;
     }
+
     loadRealSecrets(token);
-  }, []);
+}, [loadDemoSecrets, loadRealSecrets, navigate, token]);
 
   const handleAddSecret = async (name, value) => {
     if (isGuest) {

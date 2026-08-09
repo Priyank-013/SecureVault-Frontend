@@ -1,14 +1,9 @@
-import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 function Home() {
-  const [showButton, setShowButton] = useState(false);
+  
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const timer = setTimeout(() => setShowButton(true), 1500);
-    return () => clearTimeout(timer);
-  }, []);
 
   const handleGuestMode = () => {
     sessionStorage.setItem("guestMode", "true");
