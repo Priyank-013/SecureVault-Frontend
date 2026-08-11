@@ -1,4 +1,4 @@
-const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:8080";
+const API_BASE = "https://site--securevault-backend--69w8ljjj4v8l.code.run";
 
 async function parseError(response) {
   try {
