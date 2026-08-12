@@ -14,12 +14,10 @@ Frontend interface for SecureVault, a developer secrets manager that lets users 
 
 ## Tech Stack
 
-- React 18
-- Tailwind CSS
+- HTML5
+- CSS3
+- React
 - React Router DOM
-- Axios
-- Vite
-- JWT Decode
 
 ## Related Repositories
 
