@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/api";
 import PasswordStrength from "../components/PasswordStrength";
@@ -10,9 +10,15 @@ function SignUp() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [focusedField, setFocusedField] = useState(null);
+  const emailRef = useRef(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    emailRef.current?.focus();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -46,139 +52,155 @@ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     }
   };
 
+  const handleGuestMode = () => {
+    sessionStorage.setItem("guestMode", "true");
+    localStorage.removeItem("token");
+    localStorage.removeItem("userEmail");
+    navigate("/dashboard");
+  };
+
   return (
-    <div className="auth-wrap">
-      <div style={{ width: "360px" }}>
-       <div className="auth-logo" style={{ cursor: "pointer" }} onClick={() => navigate("/")}>
-  <span className="auth-logo-mark">🔐</span>
-  SecureVault
-</div>
+    <div className="login-page">
+      <div className="login-glow" aria-hidden="true" />
 
-        <div className="card">
-          <h2 style={{ fontSize: "16px", fontWeight: 700, marginBottom: "4px" }}>Create your vault</h2>
-          <p className="text-secondary" style={{ fontSize: "12.5px", marginBottom: "20px" }}>
-            Start storing secrets securely
-          </p>
+      <div className="login-shell">
+        <div
+          className="login-wordmark"
+          onClick={() => navigate("/")}
+        >
+          Secure<span>Vault</span>
+        </div>
 
-          {error && <div className="alert-error">{error}</div>}
-          {success && <div className="alert-success">{success}</div>}
+        <p className="login-tagline">Create your vault</p>
 
-          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-            <div>
-              <label className="field-label">Email</label>
+        {error && <div className="login-error">{error}</div>}
+        {success && <div className="login-error login-error-success">{success}</div>}
+
+        <form className="login-form" onSubmit={handleSubmit}>
+          <div className={`login-field ${focusedField === "email" ? "is-focused" : ""}`}>
+            <label className="login-label" htmlFor="email">Email</label>
+            <input
+              ref={emailRef}
+              id="email"
+              type="email"
+              autoComplete="email"
+              placeholder="dev@work.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onFocus={() => setFocusedField("email")}
+              onBlur={() => setFocusedField(null)}
+              className="login-input"
+              required
+              disabled={loading}
+              spellCheck={false}
+            />
+            <span className="login-underline" />
+          </div>
+
+          <div className={`login-field ${focusedField === "password" ? "is-focused" : ""}`}>
+            <label className="login-label" htmlFor="password">Password</label>
+            <div className="login-password-row">
               <input
-                type="email"
-                placeholder="you@company.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="input-field"
+                id="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
+                placeholder="Min 6 characters"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onFocus={() => setFocusedField("password")}
+                onBlur={() => setFocusedField(null)}
+                className="login-input"
+                required
+                minLength="6"
+                disabled={loading}
+              />
+              <button
+                type="button"
+                className="login-eye"
+                onClick={() => setShowPassword((s) => !s)}
+                tabIndex={-1}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                  </svg>
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                )}
+              </button>
+            </div>
+            <span className="login-underline" />
+            <PasswordStrength password={password} />
+          </div>
+
+          <div className={`login-field ${focusedField === "confirm" ? "is-focused" : ""}`}>
+            <label className="login-label" htmlFor="confirmPassword">Confirm password</label>
+            <div className="login-password-row">
+              <input
+                id="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                autoComplete="new-password"
+                placeholder="••••••••"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                onFocus={() => setFocusedField("confirm")}
+                onBlur={() => setFocusedField(null)}
+                className="login-input"
                 required
                 disabled={loading}
               />
+              <button
+                type="button"
+                className="login-eye"
+                onClick={() => setShowConfirmPassword((s) => !s)}
+                tabIndex={-1}
+                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+              >
+                {showConfirmPassword ? (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                  </svg>
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                )}
+              </button>
             </div>
-            <div>
-  <label className="field-label">Password</label>
-  <div style={{ position: "relative" }}>
-    <input
-      type={showPassword ? "text" : "password"}
-      placeholder="Min 6 characters"
-      value={password}
-      onChange={(e) => setPassword(e.target.value)}
-      className="input-field"
-      style={{ paddingRight: "40px" }}
-      required
-      minLength="6"
-      disabled={loading}
-    />
-    <button
-  type="button"
-  onClick={() => setShowPassword((prev) => !prev)}
-  style={{
-    position: "absolute",
-    right: "10px",
-    top: "50%",
-    transform: "translateY(-50%)",
-    background: "transparent",
-    border: "none",
-    cursor: "pointer",
-    color: "var(--text-secondary)",
-    padding: "4px",
-    display: "flex",
-    alignItems: "center",
-  }}
-  tabIndex={-1}
->
-  {showPassword ? (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-      <line x1="1" y1="1" x2="23" y2="23" />
-    </svg>
-  ) : (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  )}
-</button>
-  </div>
-  <PasswordStrength password={password} />
-</div>
-           <div>
-  <label className="field-label">Confirm password</label>
-  <div style={{ position: "relative" }}>
-    <input
-      type={showConfirmPassword ? "text" : "password"}
-      placeholder="••••••••"
-      value={confirmPassword}
-      onChange={(e) => setConfirmPassword(e.target.value)}
-      className="input-field"
-      style={{ paddingRight: "40px" }}
-      required
-      disabled={loading}
-    />
-    <button
-      type="button"
-      onClick={() => setShowConfirmPassword((prev) => !prev)}
-      style={{
-        position: "absolute",
-        right: "10px",
-        top: "50%",
-        transform: "translateY(-50%)",
-        background: "transparent",
-        border: "none",
-        cursor: "pointer",
-        color: "var(--text-secondary)",
-        padding: "4px",
-        display: "flex",
-        alignItems: "center",
-      }}
-      tabIndex={-1}
-    >
-      {showConfirmPassword ? (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-          <line x1="1" y1="1" x2="23" y2="23" />
-        </svg>
-      ) : (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-          <circle cx="12" cy="12" r="3" />
-        </svg>
-      )}
-    </button>
-  </div>
-</div>
-            <button type="submit" className="btn-primary" style={{ justifyContent: "center", marginTop: "4px" }} disabled={loading}>
-              {loading ? "Creating account..." : "Sign up"}
-            </button>
-          </form>
+            <span className="login-underline" />
+          </div>
 
-          <p className="text-secondary" style={{ marginTop: "18px", fontSize: "13px", textAlign: "center" }}>
-            Already have an account?{" "}
-            <span className="text-accent" style={{ cursor: "pointer", fontWeight: 600 }} onClick={() => navigate("/login")}>
-              Log in
-            </span>
-          </p>
+          <button
+            type="submit"
+            className="btn-primary login-submit"
+            disabled={loading}
+          >
+            {loading ? "Creating account..." : "Create account"}
+          </button>
+        </form>
+
+        <div className="login-footer">
+          <div className="login-footer-row">
+            <span className="login-footer-text">Already have a vault?</span>
+            <button className="login-link-accent" onClick={() => navigate("/login")}>
+              Log in →
+            </button>
+          </div>
+
+          <div className="login-footer-divider" />
+
+          <div className="login-footer-row login-footer-row-dim">
+            <button className="login-link-dim" onClick={handleGuestMode}>
+              or explore as guest →
+            </button>
+          </div>
         </div>
       </div>
     </div>

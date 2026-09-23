@@ -1,4 +1,4 @@
-const API_BASE = "https://site--securevault-backend--69w8ljjj4v8l.code.run";
+const API_BASE = "http://localhost:8080";
 
 async function parseError(response) {
   try {

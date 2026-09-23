@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/api";
 
@@ -8,140 +8,141 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [focusedField, setFocusedField] = useState(null);
+  const emailRef = useRef(null);
   const navigate = useNavigate();
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setError("");
-  setLoading(true);
+  useEffect(() => {
+    emailRef.current?.focus();
+  }, []);
 
-  try {
-    const response = await api.login(email, password);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || "Login failed. Please check your credentials.");
+    try {
+      const response = await api.login(email, password);
+      const data = await response.json();
+
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("userEmail", data.email);
+      sessionStorage.removeItem("guestMode");
+      navigate("/dashboard");
+    } catch (err) {
+      setError(err.message || "Login failed. Please check your credentials.");
+    } finally {
+      setLoading(false);
     }
+  };
 
-    const data = await response.json();
-
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("userEmail", data.email);
-    sessionStorage.removeItem("guestMode");
+  const handleGuestMode = () => {
+    sessionStorage.setItem("guestMode", "true");
+    localStorage.removeItem("token");
+    localStorage.removeItem("userEmail");
     navigate("/dashboard");
-
-  } catch (err) {
-    setError(err.message);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
-    <div className="auth-wrap">
-      <div style={{ width: "360px" }}>
-        <div className="auth-logo" style={{ cursor: "pointer" }} onClick={() => navigate("/")}>
-          <span className="auth-logo-mark">🔐</span>
-          SecureVault
+    <div className="login-page">
+
+      <div className="login-shell">
+        <div
+          className="login-wordmark"
+          onClick={() => navigate("/")}
+        >
+          Secure<span>Vault</span>
         </div>
 
-        <div className="card">
-          <h2 style={{ fontSize: "16px", fontWeight: 700, marginBottom: "4px" }}>Welcome back</h2>
-          <p className="text-secondary" style={{ fontSize: "12.5px", marginBottom: "20px" }}>
-            Log in to access your vault
-          </p>
+        <p className="login-tagline">Log in to your vault</p>
 
-          {error && <div className="alert-error">{error}</div>}
+        {error && <div className="login-error">{error}</div>}
 
-          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-            <div>
-              <label className="field-label">Email</label>
+        <form className="login-form" onSubmit={handleSubmit}>
+          <div className={`login-field ${focusedField === "email" ? "is-focused" : ""}`}>
+            <label className="login-label" htmlFor="email">Email</label>
+            <input
+              ref={emailRef}
+              id="email"
+              type="email"
+              autoComplete="email"
+              placeholder="you@company.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onFocus={() => setFocusedField("email")}
+              onBlur={() => setFocusedField(null)}
+              className="login-input"
+              required
+              disabled={loading}
+              spellCheck={false}
+            />
+            <span className="login-underline" />
+          </div>
+
+          <div className={`login-field ${focusedField === "password" ? "is-focused" : ""}`}>
+            <label className="login-label" htmlFor="password">Password</label>
+            <div className="login-password-row">
               <input
-                type="email"
-                placeholder="you@company.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="input-field"
+                id="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onFocus={() => setFocusedField("password")}
+                onBlur={() => setFocusedField(null)}
+                className="login-input"
                 required
                 disabled={loading}
               />
+              <button
+                type="button"
+                className="login-eye"
+                onClick={() => setShowPassword((s) => !s)}
+                tabIndex={-1}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                  </svg>
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                )}
+              </button>
             </div>
+            <span className="login-underline" />
+          </div>
 
-            <div>
-              <label className="field-label">Password</label>
-              <div style={{ position: "relative" }}>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="input-field"
-                  style={{ paddingRight: "40px" }}
-                  required
-                  disabled={loading}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  style={{
-                    position: "absolute",
-                    right: "10px",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    background: "transparent",
-                    border: "none",
-                    cursor: "pointer",
-                    color: "var(--text-secondary)",
-                    padding: "4px",
-                    display: "flex",
-                    alignItems: "center",
-                  }}
-                  tabIndex={-1}
-                >
-                  {showPassword ? (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-                      <line x1="1" y1="1" x2="23" y2="23" />
-                    </svg>
-                  ) : (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                      <circle cx="12" cy="12" r="3" />
-                    </svg>
-                  )}
-                </button>
-              </div>
-            </div>
+          <button
+            type="submit"
+            className="btn-primary login-submit"
+            disabled={loading}
+          >
+            {loading ? "Logging in..." : "Log in"}
+          </button>
+        </form>
 
-            <button 
-              type="submit" 
-              className="btn-primary" 
-              style={{ justifyContent: "center", marginTop: "4px" }} 
-              disabled={loading}
-            >
-              {loading ? "Logging in..." : "Log in"}
-            </button>
-          </form>
+        <div className="login-footer">
+  <div className="login-footer-row">
+    <span className="login-footer-text">Don't have a vault?</span>
+    <button className="login-link-accent" onClick={() => navigate("/signup")}>
+      Sign up →
+    </button>
+  </div>
 
-          <p className="text-secondary" style={{ marginTop: "18px", fontSize: "13px", textAlign: "center" }}>
-            Don't have an account?{" "}
-            <span className="text-accent" style={{ cursor: "pointer", fontWeight: 600 }} onClick={() => navigate("/signup")}>
-              Sign up
-            </span>
-          </p>
-          <p className="text-secondary" style={{ marginTop: "8px", fontSize: "13px", textAlign: "center" }}>
-            <span
-              className="text-accent"
-              style={{ cursor: "pointer", fontWeight: 600 }}
-              onClick={() => {
-                sessionStorage.setItem("guestMode", "true");
-                navigate("/dashboard");
-              }}
-            >
-              Continue as guest →
-            </span>
-          </p>
-        </div>
+  <div className="login-footer-divider" />
+
+  <div className="login-footer-row login-footer-row-dim">
+    <button className="login-link-dim" onClick={handleGuestMode}>
+      or explore as guest →
+    </button>
+  </div>
+</div>
       </div>
     </div>
   );
